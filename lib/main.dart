@@ -19,9 +19,9 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final TextEditingController ipController =
-  TextEditingController(text: '0.tcp.sa.ngrok.io');
+      TextEditingController(text: '8.tcp.ngrok.io');
   final TextEditingController portController =
-  TextEditingController(text: '15801');
+      TextEditingController(text: '18126');
   final TextEditingController textController = TextEditingController();
 
   final Printer.ZSDK zsdk = Printer.ZSDK();
@@ -30,11 +30,10 @@ class _MyAppState extends State<MyApp> {
   final List<String> qrFormats = ['json', 'csv'];
 
   final Map<String, String> etiquetaData = {
-    "N° etiqueta impresión": "IMP-000002",
-    "N° etiqueta extrusión": "EXT-000003",
+     "N° etiqueta extrusión": "EXT-000003",
     "Orden Prod.": "OPIMP-005",
     "Fecha": "26/07/2024",
-    "Turno": "Turno 2",
+    "Turno": "2",
     "Operador": "Pedro Sanchez",
     "Máquina": "15",
     "Tipo Producto": "Emp. Tarrina diamante",
@@ -49,15 +48,14 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      populateTextField();  // Poblar después de que se construya la UI
+      populateTextField(); // Poblar después de que se construya la UI
     });
   }
 
   void populateTextField() {
     setState(() {
-      textController.text = etiquetaData.entries
-          .map((e) => '${e.key}: ${e.value}')
-          .join('\n');
+      textController.text =
+          etiquetaData.entries.map((e) => '${e.key}: ${e.value}').join('\n');
     });
   }
 
@@ -118,7 +116,7 @@ class _MyAppState extends State<MyApp> {
                 if (ipController.text.isNotEmpty &&
                     portController.text.isNotEmpty) {
                   Map<String, String> etiquetaDataParsed =
-                  parseTextInput(textController.text);
+                      parseTextInput(textController.text);
 
                   final pdfPath = await generateAndSavePdf(etiquetaDataParsed);
                   await sendPdfToPrinter(
@@ -168,59 +166,106 @@ class _MyAppState extends State<MyApp> {
       pw.Page(
         pageFormat: PdfPageFormat(289, 144),
         build: (pw.Context context) {
-          return pw.Stack(
+          return pw.Column(
+            mainAxisSize: pw.MainAxisSize.max,
             children: [
               pw.Container(
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(
-                    color: PdfColors.black,
-                    width: 0.5,
+                padding: pw.EdgeInsets.only(top: 10, bottom: 5),
+                child: pw.Text(
+                  "N° etiqueta impresión IMP-000002",
+                  style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+              pw.Row(
+                children: [
+                  pw.Expanded(
+                    child: pw.Container(
+                      margin: pw.EdgeInsets.only(top: 5),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(
+                          color: PdfColors.black,
+                          width: 0.5,
+                        ),
+                      ),
+                      padding: pw.EdgeInsets.all(5),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          for (int i = 0; i < data.entries.length; i += 2)
+                            pw.Row(
+                              children: [
+                                pw.Expanded(
+                                  child: pw.Container(
+                                      padding: pw.EdgeInsets.only(right: 3, bottom: 2),
+
+                                      child: pw.RichText(
+                                      text: pw.TextSpan(
+                                        children: [
+                                          pw.TextSpan(
+                                            text: "${data.entries.elementAt(i).key}: ",
+                                            style: pw.TextStyle(
+                                              fontSize: 7,
+                                              fontWeight: pw.FontWeight.bold,
+                                            ),
+                                          ),
+                                          pw.TextSpan(
+                                            text: "${data.entries.elementAt(i).value}",
+                                            style: pw.TextStyle(fontSize: 7),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  ),
+                                ),
+                                if (i + 1 < data.entries.length)
+                                  pw.Expanded(
+                                    child: pw.Container(
+                                        padding: pw.EdgeInsets.only(left: 3, bottom: 2),
+                                      child: pw.RichText(
+                                        text: pw.TextSpan(
+                                          children: [
+                                            pw.TextSpan(
+                                              text: "${data.entries.elementAt(i + 1).key}: ",
+                                              style: pw.TextStyle(
+                                                fontSize: 7,
+                                                fontWeight: pw.FontWeight.bold,
+                                              ),
+                                            ),
+                                            pw.TextSpan(
+                                              text: "${data.entries.elementAt(i + 1).value}",
+                                              style: pw.TextStyle(fontSize: 7),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    ),
+                                  ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                margin: pw.EdgeInsets.all(5),
-                padding: pw.EdgeInsets.all(5),
-                child: pw.Row(
-                  children: [
-                    pw.Expanded(
-                      flex: 2,
-                      child: pw.Container(
-                        padding: pw.EdgeInsets.only(left: 10),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            for (var entry in data.entries)
-                              pw.Column(
-                                children: [
-                                  pw.Text("${entry.key}: ${entry.value}",
-                                      style: pw.TextStyle(fontSize: 7)),
-                                  pw.SizedBox(height: 1),
-                                ],
-                              ),
-                          ],
-                        ),
+                  pw.Container(
+                    height: 100,
+                    child: pw.Container(
+                      margin: pw.EdgeInsets.only(top: 60, right: 10, bottom: 2),
+                      child: pw.BarcodeWidget(
+                        height: 50,
+                        width: 50,
+                        barcode: pw.Barcode.qrCode(),
+                        data: qrData,
                       ),
                     ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Container(
-                        width: 400,
-                        height: 400,
-                        padding: pw.EdgeInsets.only(right: 10),
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.BarcodeWidget(
-                          barcode: pw.Barcode.qrCode(),
-                          data: qrData,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           );
         },
       ),
     );
+
 
     final outputDir = await getTemporaryDirectory();
     final outputFile = File("${outputDir.path}/etiqueta.pdf");
